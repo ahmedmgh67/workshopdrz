@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How Much It Costs — Food Waste</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f0ebe0;
+  --paper: #faf7f0;
+  --ink: #1c1410;
+  --ink-mid: #5a4e44;
+  --rule: #d8cfc0;
+  --accent: #b5421b;
+  --amber: #c87d1a;
+  --input-bg: #fffbee;
+  --input-border: #d4a832;
+  --total-bg: #1c1410;
+  --total-fg: #faf7f0;
+  --green: #2d7a3a;
+  --red: #b5421b;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'IBM Plex Mono', monospace;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  padding: 2.5rem 2rem 4rem;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 2px solid var(--ink);
+}
+
+.header-left { flex: 1; }
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+h1 span {
+  display: block;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--ink-mid);
+  margin-top: 0.45rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  margin-left: 1.5rem;
+}
+
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.name-label {
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+#my-name {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.28rem 0.55rem;
+  color: var(--ink);
+  width: 130px;
+}
+
+#my-name:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(200,125,26,0.18);
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: 1.5px solid var(--ink);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+}
+
+.settings-btn:hover { background: var(--ink); color: var(--paper); }
+.settings-btn svg { flex-shrink: 0; }
+
+.meta {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.pill {
+  font-size: 0.7rem;
+  padding: 0.22rem 0.7rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-mid);
+  white-space: nowrap;
+}
+
+.pill strong { color: var(--ink); font-weight: 600; }
+
+.table-wrap { overflow-x: auto; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.81rem;
+}
+
+thead th {
+  text-align: left;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  border-bottom: 1.5px solid var(--ink);
+  white-space: nowrap;
+}
+
+thead th.r { text-align: right; }
+
+tbody tr { border-bottom: 1px solid var(--rule); }
+tbody tr:hover { background: rgba(0,0,0,0.025); }
+
+tbody td {
+  padding: 0.42rem 0.7rem;
+  vertical-align: middle;
+}
+
+tbody td.r { text-align: right; }
+
+.cat-name { font-weight: 500; }
+
+input.ed {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.8rem;
+  padding: 0.22rem 0.45rem;
+  color: var(--ink);
+  text-align: right;
+  width: 82px;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  -moz-appearance: textfield;
+}
+
+input.ed::-webkit-inner-spin-button,
+input.ed::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+input.ed:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(200,125,26,0.18);
+}
+
+input.ed.pct { width: 70px; }
+
+.calc { font-weight: 600; text-align: right; }
+
+tfoot tr { background: var(--total-bg); }
+
+tfoot td {
+  padding: 0.6rem 0.7rem;
+  font-weight: 600;
+  color: var(--total-fg);
+}
+
+tfoot td.r { text-align: right; }
+
+.t-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.t-val { font-size: 1rem; color: var(--amber); }
+.t-pct { font-size: 0.85rem; color: #c8d4a8; }
+
+.warn {
+  display: none;
+  font-size: 0.68rem;
+  color: var(--accent);
+  margin-top: 0.7rem;
+}
+
+.warn.on { display: block; }
+
+/* ── Live Panel ── */
+.live-panel {
+  margin-top: 2.5rem;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+}
+
+.live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--rule);
+  background: var(--total-bg);
+  color: var(--total-fg);
+}
+
+.live-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #888;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+
+.dot.connected { background: #5cb85c; animation: pulse 2s infinite; }
+.dot.error     { background: var(--accent); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+.live-count {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.chart-wrap {
+  padding: 1.25rem 1rem;
+  min-height: 120px;
+  position: relative;
+}
+
+.chart-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+  font-size: 0.72rem;
+  color: var(--ink-mid);
+}
+
+#live-chart { display: none; }
+
+/* ── Modal ── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(28,20,16,0.55);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.overlay.on { display: flex; }
+
+.modal {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  padding: 2rem 2rem 1.5rem;
+  width: 340px;
+  max-width: 92vw;
+  animation: drop 0.18s ease;
+}
+
+@keyframes drop {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.modal h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.field { margin-bottom: 1.1rem; }
+
+.field label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+  margin-bottom: 0.35rem;
+}
+
+.field input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.7rem;
+  color: var(--ink);
+}
+
+.field input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(200,125,26,0.18);
+}
+
+.field small {
+  display: block;
+  font-size: 0.63rem;
+  color: var(--ink-mid);
+  margin-top: 0.28rem;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+
+.btn {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.45rem 1.1rem;
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+
+.btn-p { background: var(--ink); color: var(--paper); }
+.btn-p:hover { background: #3a2e26; }
+.btn-s { background: transparent; color: var(--ink); }
+.btn-s:hover { background: var(--ink); color: var(--paper); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>How Much It Costs <span>Household Food Waste Calculator</span></h1>
+  </div>
+  <div class="header-right">
+    <div class="name-row">
+      <span class="name-label">Your name</span>
+      <input type="text" id="my-name" placeholder="Anonymous" maxlength="40" oninput="onNameChange()">
+    </div>
+    <div class="btn-row">
+      <button class="settings-btn" onclick="openSettings()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Constants
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="meta" id="meta"></div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th class="r">% of Organic Waste</th>
+        <th class="r">Cost / kg</th>
+        <th class="r">Annual Cost / Household</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+    <tfoot>
+      <tr>
+        <td class="t-label">Total</td>
+        <td class="r t-pct" id="tot-pct">—</td>
+        <td></td>
+        <td class="r t-val" id="tot-cost">—</td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<div class="warn" id="warn">
+  ⚠ Percentages sum to <span id="pct-sum"></span>% — expected 100%
+</div>
+
+<!-- Live Panel -->
+<div class="live-panel">
+  <div class="live-header">
+    <div class="live-title">
+      <div class="dot" id="dot"></div>
+      Live — Workshop
+    </div>
+    <div class="live-count" id="live-count"></div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-empty" id="chart-empty">Connecting…</div>
+    <canvas id="live-chart" height="80"></canvas>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="overlay" id="overlay" onclick="bgClick(event)">
+  <div class="modal">
+    <h2>Constants</h2>
+    <div class="field">
+      <label>Organic Waste per Capita</label>
+      <input type="number" id="s-org" step="0.05" min="0.01">
+      <small>kg / capita / day</small>
+    </div>
+    <div class="field">
+      <label>Household Size</label>
+      <input type="number" id="s-hh" step="1" min="1">
+      <small>number of people</small>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-s" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-p" onclick="saveSettings()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Calculator ──────────────────────────────────────────────
+const CATS = [
+  { name: "Meat",                        pct: 0.03, cpk: 500 },
+  { name: "Other Dairy",                 pct: 0.04, cpk: 150 },
+  { name: "Processed Fruit",             pct: 0.04, cpk: 100 },
+  { name: "Fish and Seafood",            pct: 0.02, cpk: 150 },
+  { name: "Fresh Vegetables",            pct: 0.28, cpk: 30  },
+  { name: "Added Sugar & Sweeteners",    pct: 0.02, cpk: 30  },
+  { name: "Poultry",                     pct: 0.04, cpk: 200 },
+  { name: "Fresh Fruit",                 pct: 0.18, cpk: 100 },
+  { name: "Grain Products",              pct: 0.19, cpk: 45  },
+  { name: "Processed Vegetables",        pct: 0.05, cpk: 80  },
+  { name: "Added Fats & Oils",           pct: 0.03, cpk: 100 },
+  { name: "Fluid Milk",                  pct: 0.05, cpk: 100 },
+  { name: "Eggs",                        pct: 0.02, cpk: 150 },
+  { name: "Tree Nuts & Peanuts",         pct: 0.01, cpk: 250 },
+];
+
+let C = { org: 0.6, hh: 4 };
+
+const calc  = (pct, cpk) => pct * C.org * 365 * cpk * C.hh;
+const fmt   = n => Math.round(n).toLocaleString();
+const fmtp  = n => (n * 100).toFixed(1) + '%';
+
+function renderMeta() {
+  document.getElementById('meta').innerHTML =
+    `<div class="pill">Organic waste: <strong>${C.org} kg/capita/day</strong></div>` +
+    `<div class="pill">Household: <strong>${C.hh} capita</strong></div>` +
+    `<div class="pill">Period: <strong>Annual (365 days)</strong></div>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  CATS.forEach((c, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      `<td class="cat-name">${c.name}</td>` +
+      `<td class="r"><input class="ed pct" type="number" value="${+(c.pct*100).toFixed(1)}"
+         min="0" max="100" step="0.1" data-i="${i}" data-f="pct" oninput="change(this)"></td>` +
+      `<td class="r"><input class="ed" type="number" value="${c.cpk}"
+         min="0" step="1" data-i="${i}" data-f="cpk" oninput="change(this)"></td>` +
+      `<td class="calc" id="c${i}">${fmt(calc(c.pct, c.cpk))}</td>`;
+    tbody.appendChild(tr);
+  });
+  updateTotals();
+}
+
+function change(el) {
+  const i = +el.dataset.i, f = el.dataset.f;
+  const v = parseFloat(el.value);
+  if (isNaN(v) || v < 0) return;
+  if (f === 'pct') CATS[i].pct = v / 100; else CATS[i].cpk = v;
+  document.getElementById('c' + i).textContent = fmt(calc(CATS[i].pct, CATS[i].cpk));
+  updateTotals();
+}
+
+function totalCost() {
+  return CATS.reduce((s, c) => s + calc(c.pct, c.cpk), 0);
+}
+
+function updateTotals() {
+  let sp = 0;
+  CATS.forEach(c => { sp += c.pct; });
+  const sc = totalCost();
+  document.getElementById('tot-pct').textContent  = fmtp(sp);
+  document.getElementById('tot-cost').textContent = fmt(sc);
+  const w = document.getElementById('warn');
+  const s = Math.round(sp * 1000) / 10;
+  if (Math.abs(s - 100) > 0.5) {
+    document.getElementById('pct-sum').textContent = s;
+    w.classList.add('on');
+  } else { w.classList.remove('on'); }
+  schedulePublish();
+}
+
+function openSettings() {
+  document.getElementById('s-org').value = C.org;
+  document.getElementById('s-hh').value  = C.hh;
+  document.getElementById('overlay').classList.add('on');
+}
+
+function closeSettings() { document.getElementById('overlay').classList.remove('on'); }
+
+function saveSettings() {
+  const o = parseFloat(document.getElementById('s-org').value);
+  const h = parseFloat(document.getElementById('s-hh').value);
+  if (!isNaN(o) && o > 0) C.org = o;
+  if (!isNaN(h) && h > 0) C.hh  = h;
+  closeSettings();
+  renderMeta();
+  CATS.forEach((c, i) => {
+    document.getElementById('c' + i).textContent = fmt(calc(c.pct, c.cpk));
+  });
+  updateTotals();
+}
+
+function bgClick(e) { if (e.target === document.getElementById('overlay')) closeSettings(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+
+// ── WebSocket ────────────────────────────────────────────────
+let ws = null, myId = null, publishTimer = null, reconnectTimer = null;
+
+const COLORS = [
+  '#c87d1a','#2d7a3a','#2a5fa8','#b5421b','#7a2d7a',
+  '#1a7a7a','#6b5a1a','#1a4b6b','#7a1a3a','#3a6b1a',
+];
+
+function getColor(idx) { return COLORS[idx % COLORS.length]; }
+
+function myName() {
+  return document.getElementById('my-name').value.trim() || 'Anonymous';
+}
+
+function onNameChange() { schedulePublish(); }
+
+function schedulePublish() {
+  clearTimeout(publishTimer);
+  publishTimer = setTimeout(publish, 400);
+}
+
+function publish() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'update', name: myName(), totalCost: Math.round(totalCost()) }));
+}
+
+function setDot(state) {
+  const d = document.getElementById('dot');
+  d.className = 'dot' + (state === 'ok' ? ' connected' : state === 'err' ? ' error' : '');
+}
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setDot('ok');
+    document.getElementById('chart-empty').textContent = 'Waiting for participants…';
+    clearTimeout(reconnectTimer);
+    publish();
+  };
+
+  ws.onmessage = ({ data }) => {
+    try {
+      const msg = JSON.parse(data);
+      if (msg.type === 'welcome') { myId = msg.id; }
+      if (msg.type === 'state')   { updateChart(msg.users); }
+    } catch {}
+  };
+
+  ws.onclose = () => {
+    setDot('');
+    document.getElementById('live-count').textContent = '';
+    reconnectTimer = setTimeout(connect, 3000);
+  };
+
+  ws.onerror = () => { setDot('err'); ws.close(); };
+}
+
+// ── Chart ────────────────────────────────────────────────────
+let chart = null;
+
+function updateChart(users) {
+  const count = users.length;
+  document.getElementById('live-count').textContent =
+    count === 1 ? '1 participant' : `${count} participants`;
+
+  if (count === 0) {
+    document.getElementById('chart-empty').style.display = 'flex';
+    document.getElementById('chart-empty').textContent = 'No participants yet';
+    document.getElementById('live-chart').style.display = 'none';
+    if (chart) { chart.destroy(); chart = null; }
+    return;
+  }
+
+  document.getElementById('chart-empty').style.display = 'none';
+  document.getElementById('live-chart').style.display = 'block';
+
+  const sorted = [...users].sort((a, b) => b.totalCost - a.totalCost);
+  const labels = sorted.map(u => u.id === myId ? u.name + ' ★' : u.name);
+  const data   = sorted.map(u => u.totalCost);
+  const colors = sorted.map((_, i) => getColor(i));
+
+  if (!chart) {
+    const ctx = document.getElementById('live-chart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors,
+          borderWidth: 0,
+          borderRadius: 2,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => '  ' + Math.round(ctx.parsed.x).toLocaleString()
+            },
+            bodyFont: { family: 'IBM Plex Mono', size: 12 },
+            titleFont: { family: 'IBM Plex Mono', size: 11 },
+            backgroundColor: '#1c1410',
+            titleColor: '#c8d4a8',
+            bodyColor: '#c87d1a',
+            padding: 10,
+            cornerRadius: 2,
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(0,0,0,0.07)' },
+            ticks: {
+              font: { family: 'IBM Plex Mono', size: 10 },
+              color: '#5a4e44',
+              callback: v => v.toLocaleString(),
+            }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { family: 'IBM Plex Mono', size: 11 }, color: '#1c1410' }
+          }
+        }
+      }
+    });
+  } else {
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = data;
+    chart.data.datasets[0].backgroundColor = colors;
+    chart.update('active');
+  }
+
+  // Adjust canvas height for number of bars
+  const h = Math.max(80, count * 38 + 30);
+  document.getElementById('live-chart').style.height = h + 'px';
+  if (chart) chart.resize();
+}
+
+// ── Init ─────────────────────────────────────────────────────
+renderMeta();
+renderTable();
+connect();
+</script>
+</body>
+</html>
