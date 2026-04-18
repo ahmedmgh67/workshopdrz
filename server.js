@@ -7,9 +7,8 @@ const os = require('os');
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
-  const file = path.join(__dirname, 'hic.html');
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(fs.readFileSync(file));
+  res.end(fs.readFileSync(path.join(__dirname, 'hic.html')));
 });
 
 const wss = new WebSocket.Server({ server });
