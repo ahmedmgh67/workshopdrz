@@ -621,7 +621,7 @@ function setDot(state) {
 function connect() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
   // const url = `${proto}://${location.host}`;
-  const url = `${proto}://${location.host}${location.pathname.replace(/\/$/, '')}`;
+  const url = `${proto}://${location.host}${location.pathname.replace(/\/$/, '')}` + '/';
   ws = new WebSocket(url);
 
   ws.onopen = () => {
