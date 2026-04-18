@@ -5,16 +5,11 @@ const path = require('path');
 const os = require('os');
 
 const PORT = process.env.PORT || 3000;
-const SLUG = '/wokshopdrz';
 
 const server = http.createServer((req, res) => {
-  if (req.url === SLUG || req.url === SLUG + '/') {
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-    res.end(fs.readFileSync(path.join(__dirname, 'hic.html')));
-  } else {
-    res.writeHead(301, { Location: SLUG });
-    res.end();
-  }
+  const file = path.join(__dirname, 'hic.html');
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+  res.end(fs.readFileSync(file));
 });
 
 const wss = new WebSocket.Server({ server });
