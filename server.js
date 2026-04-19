@@ -20,7 +20,6 @@ const server = http.createServer((req, res) => {
 });
 
 const wss = new WebSocket.Server({ server });
-const active = new Map(); // ws -> uid
 
 function broadcastState() {
   const users = Object.values(store).map(u => ({ id: u.uid, name: u.name, totalCost: u.totalCost }));
@@ -29,21 +28,16 @@ function broadcastState() {
 }
 
 wss.on('connection', ws => {
+  ws.send(JSON.stringify({ type: 'state', users: Object.values(store).map(u => ({ id: u.uid, name: u.name, totalCost: u.totalCost })) }));
+
   ws.on('message', raw => {
     try {
       const msg = JSON.parse(raw);
 
-      if (msg.type === 'hello') {
-        const uid = String(msg.uid).slice(0, 64);
-        active.set(ws, uid);
-        if (!store[uid]) store[uid] = { uid, name: msg.name || 'Anonymous', totalCost: 0 };
-        ws.send(JSON.stringify({ type: 'welcome', uid, name: store[uid].name }));
-        broadcastState();
-      }
-
       if (msg.type === 'update') {
-        const uid = active.get(ws);
+        const uid = String(msg.uid || '').slice(0, 64);
         if (!uid) return;
+        if (!store[uid]) store[uid] = { uid, name: 'Anonymous', totalCost: 0 };
         if (msg.name !== undefined) store[uid].name = String(msg.name).slice(0, 40) || 'Anonymous';
         if (typeof msg.totalCost === 'number') store[uid].totalCost = msg.totalCost;
         saveStore();
@@ -57,8 +51,6 @@ wss.on('connection', ws => {
       }
     } catch {}
   });
-
-  ws.on('close', () => { active.delete(ws); });
 });
 
 function getLocalIP() {

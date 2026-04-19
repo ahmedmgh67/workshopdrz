@@ -610,12 +610,22 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSetting
 
 // ── WebSocket ────────────────────────────────────────────────
 function getUid() {
-  let uid = localStorage.getItem('hic_uid');
-  if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('hic_uid', uid); }
-  return uid;
+  try {
+    let uid = localStorage.getItem('hic_uid');
+    if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('hic_uid', uid); }
+    return uid;
+  } catch { return 'uid_' + Math.random().toString(36).slice(2); }
 }
 
-let ws = null, myId = null, publishTimer = null, reconnectTimer = null;
+function getSavedName() {
+  try { return localStorage.getItem('hic_name') || ''; } catch { return ''; }
+}
+
+function saveName(n) {
+  try { localStorage.setItem('hic_name', n); } catch {}
+}
+
+let ws = null, myId = getUid(), publishTimer = null, reconnectTimer = null;
 
 const COLORS = [
   '#c87d1a','#2d7a3a','#2a5fa8','#b5421b','#7a2d7a',
@@ -628,7 +638,7 @@ function myName() {
   return document.getElementById('my-name').value.trim() || 'Anonymous';
 }
 
-function onNameChange() { schedulePublish(); }
+function onNameChange() { saveName(myName()); schedulePublish(); }
 
 function schedulePublish() {
   clearTimeout(publishTimer);
@@ -637,7 +647,7 @@ function schedulePublish() {
 
 function publish() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  ws.send(JSON.stringify({ type: 'update', name: myName(), totalCost: Math.round(totalCost()) }));
+  ws.send(JSON.stringify({ type: 'update', uid: myId, name: myName(), totalCost: Math.round(totalCost()) }));
 }
 
 function setDot(state) {
@@ -655,20 +665,12 @@ function connect() {
     setDot('ok');
     document.getElementById('chart-empty').textContent = 'Waiting for participants…';
     clearTimeout(reconnectTimer);
-    ws.send(JSON.stringify({ type: 'hello', uid: getUid(), name: myName() }));
+    publish();
   };
 
   ws.onmessage = ({ data }) => {
     try {
       const msg = JSON.parse(data);
-      if (msg.type === 'welcome') {
-        myId = msg.uid;
-        const nameEl = document.getElementById('my-name');
-        if (!nameEl.value.trim() && msg.name && msg.name !== 'Anonymous') {
-          nameEl.value = msg.name;
-        }
-        publish();
-      }
       if (msg.type === 'state') { updateChart(msg.users); }
     } catch {}
   };
@@ -787,6 +789,8 @@ function exportChart() {
 }
 
 // ── Init ─────────────────────────────────────────────────────
+const savedName = getSavedName();
+if (savedName) document.getElementById('my-name').value = savedName;
 renderMeta();
 renderTable();
 connect();
