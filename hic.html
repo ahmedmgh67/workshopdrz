@@ -397,6 +397,23 @@ tfoot td.r { text-align: right; }
 .btn-p:hover { background: #3a2e26; }
 .btn-s { background: transparent; color: var(--ink); }
 .btn-s:hover { background: var(--ink); color: var(--paper); }
+.btn-danger { background: transparent; color: var(--accent); border-color: var(--accent); margin-right: auto; }
+.btn-danger:hover { background: var(--accent); color: var(--paper); }
+
+.export-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.25);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.63rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.export-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.5); }
 </style>
 </head>
 <body>
@@ -457,7 +474,10 @@ tfoot td.r { text-align: right; }
       <div class="dot" id="dot"></div>
       Live — Workshop
     </div>
-    <div class="live-count" id="live-count"></div>
+    <div style="display:flex;align-items:center;gap:0.75rem">
+      <button class="export-btn" id="export-btn" onclick="exportChart()" style="display:none">↓ PNG</button>
+      <div class="live-count" id="live-count"></div>
+    </div>
   </div>
   <div class="chart-wrap">
     <div class="chart-empty" id="chart-empty">Connecting…</div>
@@ -480,6 +500,7 @@ tfoot td.r { text-align: right; }
       <small>number of people</small>
     </div>
     <div class="modal-actions">
+      <button class="btn btn-danger" onclick="purgeAll()">Purge Results</button>
       <button class="btn btn-s" onclick="closeSettings()">Cancel</button>
       <button class="btn btn-p" onclick="saveSettings()">Apply</button>
     </div>
@@ -588,6 +609,12 @@ function bgClick(e) { if (e.target === document.getElementById('overlay')) close
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
 
 // ── WebSocket ────────────────────────────────────────────────
+function getUid() {
+  let uid = localStorage.getItem('hic_uid');
+  if (!uid) { uid = crypto.randomUUID(); localStorage.setItem('hic_uid', uid); }
+  return uid;
+}
+
 let ws = null, myId = null, publishTimer = null, reconnectTimer = null;
 
 const COLORS = [
@@ -628,14 +655,21 @@ function connect() {
     setDot('ok');
     document.getElementById('chart-empty').textContent = 'Waiting for participants…';
     clearTimeout(reconnectTimer);
-    publish();
+    ws.send(JSON.stringify({ type: 'hello', uid: getUid(), name: myName() }));
   };
 
   ws.onmessage = ({ data }) => {
     try {
       const msg = JSON.parse(data);
-      if (msg.type === 'welcome') { myId = msg.id; }
-      if (msg.type === 'state')   { updateChart(msg.users); }
+      if (msg.type === 'welcome') {
+        myId = msg.uid;
+        const nameEl = document.getElementById('my-name');
+        if (!nameEl.value.trim() && msg.name && msg.name !== 'Anonymous') {
+          nameEl.value = msg.name;
+        }
+        publish();
+      }
+      if (msg.type === 'state') { updateChart(msg.users); }
     } catch {}
   };
 
@@ -660,9 +694,11 @@ function updateChart(users) {
     document.getElementById('chart-empty').style.display = 'flex';
     document.getElementById('chart-empty').textContent = 'No participants yet';
     document.getElementById('live-chart').style.display = 'none';
+    document.getElementById('export-btn').style.display = 'none';
     if (chart) { chart.destroy(); chart = null; }
     return;
   }
+  document.getElementById('export-btn').style.display = 'inline-block';
 
   document.getElementById('chart-empty').style.display = 'none';
   document.getElementById('live-chart').style.display = 'block';
@@ -732,6 +768,22 @@ function updateChart(users) {
   const h = Math.max(80, count * 38 + 30);
   document.getElementById('live-chart').style.height = h + 'px';
   if (chart) chart.resize();
+}
+
+// ── Purge ────────────────────────────────────────────────────
+function purgeAll() {
+  if (!confirm('Delete all participants\' results? This cannot be undone.')) return;
+  if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'purge' }));
+  closeSettings();
+}
+
+// ── Export ───────────────────────────────────────────────────
+function exportChart() {
+  if (!chart) return;
+  const a = document.createElement('a');
+  a.href = chart.toBase64Image('image/png', 1);
+  a.download = 'workshop-results.png';
+  a.click();
 }
 
 // ── Init ─────────────────────────────────────────────────────
