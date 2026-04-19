@@ -548,8 +548,7 @@ function renderTable() {
       `<td class="cat-name">${c.name}</td>` +
       `<td class="r"><input class="ed pct" type="number" value="${+(c.pct*100).toFixed(1)}"
          min="0" max="100" step="0.1" data-i="${i}" data-f="pct" oninput="change(this)"></td>` +
-      `<td class="r"><input class="ed" type="number" value="${c.cpk}"
-         min="0" step="1" data-i="${i}" data-f="cpk" oninput="change(this)"></td>` +
+      
       `<td class="calc" id="c${i}">${fmt(calc(c.pct, c.cpk))}</td>`;
     tbody.appendChild(tr);
   });
